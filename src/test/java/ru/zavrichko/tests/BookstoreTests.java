@@ -20,111 +20,12 @@ public class BookstoreTests {
         RestAssured.baseURI = "https://demoqa.com";
     }
 
-    @Test
-    void getBooksTest() {
-        get("/BookStore/v1/Books")
-                .then()
-                .body("books", hasSize(greaterThan(0)));
-    }
-
-    @Test
-    void getBooksWithAllLogsTest() {
-        given()
-                .log().all()
-                .when()
-                .get("/BookStore/v1/Books")
-                .then()
-                .log().all()
-                .body("books", hasSize(greaterThan(0)));
-    }
-
-    @Test
-    void getBooksWithSomeLogsTest() {
-        given()
-                .log().uri()
-                .log().body()
-                .when()
-                .get("/BookStore/v1/Books")
-                .then()
-                .log().status()
-                .log().body()
-                .body("books", hasSize(greaterThan(0)));
-    }
-
-    @Test
-    void generateTokenTest() {
-        String data = "{ \"userName\": \"alex\", " +
-                "\"password\": \"asdsad#frew_DFS2\" }";
-
-        given()
-                .contentType(JSON)
-                .body(data)
-                .log().uri()
-                .log().body()
-                .when()
-                .post("/Account/v1/GenerateToken")
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(200)
-                .body("status", is("Success"))
-                .body("result", is("User authorized successfully."))
-                .body("token.size()", greaterThan(10));
-    }
-
-    @Test
-    void generateTokenWithAllureListenerTest() {
-        String data = "{ \"userName\": \"alex\", " +
-                "\"password\": \"asdsad#frew_DFS2\" }";
-
-//        RestAssured.filters(new AllureRestAssured()); in @BeforeAll
-        given()
-                .filter(new AllureRestAssured())
-                .contentType(JSON)
-                .body(data)
-                .log().uri()
-                .log().body()
-                .when()
-                .post("/Account/v1/GenerateToken")
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(200)
-                .body("status", is("Success"))
-                .body("result", is("User authorized successfully."))
-                .body("token.size()", greaterThan(10));
-    }
-    @Test
-    void generateTokenWithCustomAllureListenerTest() {
-        String data = "{ \"userName\": \"alex\", " +
-                "\"password\": \"asdsad#frew_DFS2\" }";
-
-        given()
-                .filter(withCustomTemplates())
-                .contentType(JSON)
-                .body(data)
-                .log().uri()
-                .log().body()
-                .when()
-                .post("/Account/v1/GenerateToken")
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(200)
-                .body(matchesJsonSchemaInClasspath("shemas/generateToken_response_shema.json"))
-                .body("status", is("Success"))
-                .body("result", is("User authorized successfully."))
-                .body("token.size()", greaterThan(10));
-    }
 
     @Test
     void getBookTest() {
-        String data = "9781449325862";
         given()
                 .filter(withCustomTemplates())
-                .contentType(JSON)
-               // .body(data)
-                .param("9781449325862")
+                .params("ISBN", "978144932586288")//
                 .log().uri()
                 .log().body()
                 .when()
@@ -132,7 +33,21 @@ public class BookstoreTests {
                 .then()
                 .log().status()
                 .log().body()
-                .body("title", is(equals("Git Pocket Guide")));
+                .statusCode(400)
+                .body("message", is("ISBN supplied is not available in Books Collection!"));
+    }
+
+    @Test
+    void getBooksTest() {
+        given()
+                .filter(withCustomTemplates())
+                .log().all()
+                .when()
+                .get("/BookStore/v1/Books")
+                .then()
+                .log().all()
+                .body("books", hasSize(greaterThan(0)))
+                .body("books.title[0]", is("Git Pocket Guide"));
     }
 
 }
